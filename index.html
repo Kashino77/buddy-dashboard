@@ -5,451 +5,81 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="robots" content="noindex">
   <title>山田家 家計ダッシュボード</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic UI', sans-serif; background: #f5f5f7; color: #1d1d1f; }
-
-    header { background: white; padding: 20px 24px 0; border-bottom: 1px solid #e5e5ea; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 4px rgba(0,0,0,.06); }
-    .header-top { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 14px; }
-    h1 { font-size: 1.35rem; font-weight: 700; }
-    .updated { font-size: .78rem; color: #6e6e73; }
-
-    .tabs { display: flex; }
-    .tab-btn { background: none; border: none; padding: 10px 22px; font-size: .88rem; font-weight: 500; color: #6e6e73; cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; white-space: nowrap; }
-    .tab-btn.active { color: #007aff; border-bottom-color: #007aff; }
-    .tab-btn:hover:not(.active) { color: #1d1d1f; }
-
-    .container { max-width: 860px; margin: 0 auto; padding: 20px 16px 40px; }
-    .tab-pane { display: none; }
-    .tab-pane.active { display: block; }
-
-    .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,.07); }
-    .card-title { font-size: .74rem; font-weight: 700; color: #6e6e73; text-transform: uppercase; letter-spacing: .06em; margin-bottom: 14px; }
-    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-
-    .big-number { font-size: 1.9rem; font-weight: 700; line-height: 1.1; }
-    .sub-label { font-size: .78rem; color: #6e6e73; margin-top: 5px; }
-
-    .progress-bar { background: #e5e5ea; border-radius: 8px; height: 12px; overflow: hidden; margin: 12px 0 6px; }
-    .progress-fill { height: 100%; border-radius: 8px; background: linear-gradient(90deg, #34c759, #30d158); }
-    .progress-labels { display: flex; justify-content: space-between; font-size: .78rem; color: #6e6e73; }
-
-    .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #f2f2f7; }
-    .stat-row:last-child { border-bottom: none; }
-    .stat-label { font-size: .88rem; color: #3a3a3c; }
-    .stat-value { font-size: .92rem; font-weight: 600; }
-
-    .red { color: #ff3b30; }
-    .green { color: #34c759; }
-    .blue { color: #007aff; }
-    .gray { color: #6e6e73; font-weight: 400; }
-
-    .alert { background: #fff8e1; border-left: 4px solid #ff9f0a; padding: 11px 14px; border-radius: 10px; font-size: .84rem; line-height: 1.6; margin-bottom: 14px; }
-
-    .chip { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: .7rem; font-weight: 600; background: #e5e5ea; color: #6e6e73; vertical-align: middle; }
-    .chip-red { background: #ffe5e5; color: #ff3b30; }
-    .chip-green { background: #e5f9ec; color: #34c759; }
-
-    .chart-wrap { position: relative; height: 260px; margin-top: 8px; }
-    .chart-wrap-md { position: relative; height: 200px; margin-top: 8px; }
-
-    table { width: 100%; border-collapse: collapse; font-size: .84rem; }
-    th { text-align: left; font-weight: 600; color: #6e6e73; padding: 4px 6px 8px; border-bottom: 2px solid #e5e5ea; }
-    td { padding: 8px 6px; border-bottom: 1px solid #f2f2f7; }
-    tr:last-child td { border-bottom: none; }
-    .right { text-align: right; }
-
-    .milestone-row { display: flex; align-items: center; padding: 9px 0; border-bottom: 1px solid #f2f2f7; gap: 10px; }
-    .milestone-row:last-child { border-bottom: none; }
-    .milestone-dot { width: 8px; height: 8px; border-radius: 50%; background: #007aff; flex-shrink: 0; }
-    .milestone-done { background: #34c759; }
-    .milestone-date { font-size: .78rem; color: #6e6e73; width: 82px; flex-shrink: 0; }
-    .milestone-text { font-size: .88rem; }
-
-    .asset-summary { display: flex; gap: 20px; align-items: flex-start; }
-    .asset-left { flex: 1; min-width: 0; }
-    .asset-right { width: 160px; flex-shrink: 0; }
-    .asset-right canvas { width: 160px !important; height: 160px !important; }
-    .asset-breakdown { margin-top: 14px; display: flex; flex-direction: column; gap: 7px; }
-    .ab-row { display: flex; align-items: center; gap: 7px; }
-    .ab-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-    .ab-label { font-size: .82rem; color: #3a3a3c; flex: 1; }
-    .ab-val { font-size: .82rem; font-weight: 600; white-space: nowrap; }
-
-    @media (max-width: 540px) {
-      .asset-summary { flex-direction: column; }
-      .asset-right { width: 100%; display: flex; flex-direction: column; align-items: center; }
-      .asset-right canvas { width: 140px !important; height: 140px !important; }
-
-      .grid-2 { grid-template-columns: 1fr; }
-      .tab-btn { padding: 10px 14px; font-size: .82rem; }
-      h1 { font-size: 1.1rem; }
-      .big-number { font-size: 1.6rem; }
-    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#f5f5f7;color:#1d1d1f;padding:20px}
+    .container{max-width:800px;margin:0 auto}
+    h1{font-size:1.5rem;font-weight:700;margin-bottom:6px}
+    .updated{font-size:.85rem;color:#6e6e73;margin-bottom:24px}
+    .card{background:#fff;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+    .card h2{font-size:.95rem;font-weight:600;color:#6e6e73;margin-bottom:14px;text-transform:uppercase;letter-spacing:.04em}
+    .progress-bar{background:#e5e5ea;border-radius:8px;height:14px;overflow:hidden;margin:10px 0}
+    .progress-fill{background:linear-gradient(90deg,#34c759,#30d158);height:100%;border-radius:8px}
+    .progress-labels{display:flex;justify-content:space-between;font-size:.8rem;color:#6e6e73}
+    .stat{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f2f2f7}
+    .stat:last-child{border-bottom:none}
+    .stat-label{font-size:.9rem;color:#3a3a3c}
+    .stat-value{font-weight:600;font-size:.95rem}
+    .negative{color:#ff3b30}
+    .positive{color:#34c759}
+    .neutral{color:#1d1d1f}
+    .warning{background:#fff8e1;border-left:4px solid #ff9f0a;padding:12px 14px;border-radius:8px;font-size:.85rem;margin-top:12px;line-height:1.5}
+    table{width:100%;border-collapse:collapse;font-size:.88rem}
+    th{text-align:left;font-weight:600;color:#6e6e73;padding:4px 0 8px;border-bottom:2px solid #e5e5ea}
+    td{padding:8px 0;border-bottom:1px solid #f2f2f7;vertical-align:middle}
+    td:nth-child(2),td:nth-child(3),td:nth-child(4),th:nth-child(2),th:nth-child(3),th:nth-child(4){text-align:right}
+    .over{color:#ff3b30;font-weight:600}
+    .ok{color:#34c759;font-weight:600}
+    .note{font-size:.78rem;color:#6e6e73;margin-top:10px}
+    .chip{display:inline-block;padding:2px 8px;border-radius:99px;font-size:.78rem;font-weight:600}
+    .chip-special{background:#f2f2f7;color:#6e6e73}
   </style>
 </head>
 <body>
-
-<header>
-  <div class="header-top">
-    <h1>山田家 家計ダッシュボード</h1>
-    <span class="updated">更新: 2026-05-25</span>
-  </div>
-  <div class="tabs">
-    <button class="tab-btn active" data-tab="monthly">今月</button>
-    <button class="tab-btn" data-tab="savings">資産・貯蓄</button>
-    <button class="tab-btn" data-tab="plan">ライフプラン</button>
-  </div>
-</header>
-
 <div class="container">
+  <h1>山田家 家計ダッシュボード</h1>
+  <p class="updated">最終更新: 2026-05-30</p>
 
-  <!-- ========= 今月 ========= -->
-  <div class="tab-pane active" id="tab-monthly">
-    <div class="alert">
-      ⚠️ <strong>要対応</strong>&emsp;6月27日（SMBC引落日）までに楽天銀行 → SBI へ <strong>¥232,772 以上</strong>の振替が必要
+  <div class="card">
+    <h2>生活予備費 目標 ¥2,660,000</h2>
+    <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+    <div class="progress-labels"><span>—（0%）</span><span>¥2,660,000</span></div>
+    <div style="margin-top:14px">
+      <div class="stat"><span class="stat-label">SBI残高</span><span class="stat-value neutral">—</span></div>
+      <div class="stat"><span class="stat-label">SMBC未引落（6月）</span><span class="stat-value negative">—</span></div>
+      <div class="stat"><span class="stat-label">実質手元</span><span class="stat-value negative">¥347,014</span></div>
+      <div class="stat"><span class="stat-label">月余り目安</span><span class="stat-value neutral">¥196,500/月</span></div>
+      <div class="stat"><span class="stat-label">達成見込み</span><span class="stat-value neutral">2027年11月ごろ</span></div>
     </div>
-
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-title">通常支出 <span class="chip">5月</span></div>
-        <div class="big-number">¥114,845</div>
-        <div class="sub-label">特別支出を除く</div>
-      </div>
-      <div class="card">
-        <div class="card-title">特別支出 <span class="chip">初月のみ</span></div>
-        <div class="big-number red">¥117,927</div>
-        <div class="sub-label">Nothing Phone + 窓用エアコン</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">カテゴリ別 実績 vs 目標</div>
-      <div class="chart-wrap">
-        <canvas id="chartCategory"></canvas>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">明細</div>
-      <div class="stat-row"><span class="stat-label">食費・自炊</span><span class="stat-value green">¥34,666 <span class="gray">/ ¥40,000</span></span></div>
-      <div class="stat-row"><span class="stat-label">食費・外食 <span class="chip chip-red">微超過</span></span><span class="stat-value red">¥21,653 <span class="gray">/ ¥20,000</span></span></div>
-      <div class="stat-row"><span class="stat-label">住居・駐車場（月額）</span><span class="stat-value green">¥11,880 <span class="gray">/ ¥11,880</span></span></div>
-      <div class="stat-row"><span class="stat-label">被服 <span class="chip chip-red">超過</span></span><span class="stat-value red">¥14,740 <span class="gray">/ ¥10,000</span></span></div>
-      <div class="stat-row"><span class="stat-label">美容</span><span class="stat-value green">¥5,510 <span class="gray">/ ¥15,000</span></span></div>
-      <div class="stat-row"><span class="stat-label">日用品</span><span class="stat-value green">¥1,650 <span class="gray">/ ¥3,000</span></span></div>
-      <div class="stat-row"><span class="stat-label">交通</span><span class="stat-value green">¥1,300 <span class="gray">/ ¥15,000</span></span></div>
-      <div class="stat-row"><span class="stat-label">特別: PARK DIRECT 初期費用</span><span class="stat-value gray">¥40,089</span></div>
-      <div class="stat-row"><span class="stat-label">特別: Nothing Phone 4a Pro</span><span class="stat-value gray">¥78,900</span></div>
-      <div class="stat-row"><span class="stat-label">特別: 窓用エアコン</span><span class="stat-value gray">¥39,027</span></div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">今月の気づき</div>
-      <div class="stat-row"><span class="stat-label">コンビニ支出</span><span class="stat-value">16件 · ¥4,721</span></div>
-      <div class="stat-row"><span class="stat-label">外食 最大1件</span><span class="stat-value">焼肉からいや ¥10,131</span></div>
-      <div class="stat-row"><span class="stat-label">自炊定着</span><span class="stat-value green">まいばすけっと · オーケー 使えてる</span></div>
-    </div>
+    
   </div>
 
-  <!-- ========= 資産・貯蓄 ========= -->
-  <div class="tab-pane" id="tab-savings">
-
-    <!-- 総資産サマリー -->
-    <div class="card">
-      <div class="card-title">総資産サマリー <span class="chip">2026-02時点 · 参考値</span></div>
-      <div class="asset-summary">
-        <div class="asset-left">
-          <div class="big-number blue">¥7,807,166</div>
-          <div class="sub-label">現金 + 投資（こーじ個人）</div>
-          <div class="asset-breakdown">
-            <div class="ab-row"><span class="ab-dot" style="background:#34c759"></span><span class="ab-label">投資信託（NISA・特定）</span><span class="ab-val">¥6,297,832</span></div>
-            <div class="ab-row"><span class="ab-dot" style="background:#007aff"></span><span class="ab-label">現金（楽天銀行）</span><span class="ab-val">¥407,983</span></div>
-            <div class="ab-row"><span class="ab-dot" style="background:#5856d6"></span><span class="ab-label">生前贈与SBI（温存）</span><span class="ab-val">¥1,000,000</span></div>
-            <div class="ab-row"><span class="ab-dot" style="background:#32ade6"></span><span class="ab-label">米国株 SPYD</span><span class="ab-val">¥14,886</span></div>
-            <div class="ab-row"><span class="ab-dot" style="background:#c7c7cc"></span><span class="ab-label">SBI共通口座（生活費）</span><span class="ab-val">¥86,465</span></div>
-          </div>
-          <div style="margin-top:10px;padding-top:10px;border-top:1px solid #f2f2f7">
-            <div class="ab-row"><span style="font-size:.82rem;color:#6e6e73">評価損益</span><span class="ab-val green">+¥1,868,316</span></div>
-          </div>
-        </div>
-        <div class="asset-right">
-          <canvas id="chartAssetMix"></canvas>
-          <div style="text-align:center;margin-top:6px;font-size:.74rem;color:#6e6e73">投資 81% · 現金 19%</div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">生活予備費 目標 ¥2,660,000</div>
-      <div class="progress-bar"><div class="progress-fill" style="width:3.2%"></div></div>
-      <div class="progress-labels"><span>¥86,465（3.2%）</span><span>¥2,660,000</span></div>
-      <div style="margin-top:14px">
-        <div class="stat-row"><span class="stat-label">SBI残高（5/17時点）</span><span class="stat-value">¥86,465</span></div>
-        <div class="stat-row"><span class="stat-label">SMBC未引落（6月）</span><span class="stat-value red">−¥232,772</span></div>
-        <div class="stat-row"><span class="stat-label">実質手元</span><span class="stat-value red">−¥146,307</span></div>
-        <div class="stat-row"><span class="stat-label">月余り目安（車ローンあり）</span><span class="stat-value blue">¥147,290 / 月</span></div>
-        <div class="stat-row"><span class="stat-label">達成見込み</span><span class="stat-value">2027年11月ごろ</span></div>
-      </div>
-    </div>
-
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-title">月次収入見込み</div>
-        <div class="stat-row"><span class="stat-label">こーじ給与（保守）</span><span class="stat-value green">+¥450,000</span></div>
-        <div class="stat-row"><span class="stat-label">明日花送金</span><span class="stat-value">変動</span></div>
-        <div style="margin-top:8px;font-size:.76rem;color:#6e6e73;line-height:1.7">
-          = 明日花給与<br>− 家賃 ¥122,330<br>− 定期分割 ¥18,500（6〜11月）<br>− 小遣い ¥20,000
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-title">生前贈与 SBI</div>
-        <div class="big-number">¥1,000,000</div>
-        <div class="sub-label">温存。車残価精算の最終手段</div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">個人資産（楽天証券 / 2026-02時点 · 参考）</div>
-      <div class="chart-wrap-md">
-        <canvas id="chartPortfolio"></canvas>
-      </div>
-      <div style="margin-top:12px">
-        <div class="stat-row"><span class="stat-label">投資信託（NISA・特定）</span><span class="stat-value">¥6,297,832</span></div>
-        <div class="stat-row"><span class="stat-label">米国株 SPYD</span><span class="stat-value">¥14,886</span></div>
-        <div class="stat-row"><span class="stat-label">楽天銀行（現金）</span><span class="stat-value">¥407,983</span></div>
-        <div class="stat-row"><span class="stat-label">評価損益合計</span><span class="stat-value green">+¥1,868,316</span></div>
-        <div class="stat-row"><span class="stat-label">総資産</span><span class="stat-value blue">¥6,723,006</span></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">月次支出の内訳（定常月 · 目標 ¥533,400）</div>
-      <div class="chart-wrap-md">
-        <canvas id="chartFixed"></canvas>
-      </div>
-    </div>
+  <div class="card">
+    <h2>5月 カテゴリ別支出（通常分）</h2>
+    <table>
+      <thead><tr><th>カテゴリ</th><th>実績</th><th>目標</th><th>達成率</th></tr></thead>
+      <tbody>
+        <tr><td>食費・自炊</td><td>¥34,666</td><td>¥40,000</td><td class="ok">87%</td></tr>
+        <tr><td>食費・外食</td><td>¥21,653</td><td>¥20,000</td><td class="over">108%</td></tr>
+        <tr><td>住居・駐車場</td><td>¥11,880</td><td>¥11,880</td><td class="ok">100%</td></tr>
+        <tr><td>被服</td><td>¥14,740</td><td>¥10,000</td><td class="over">147%</td></tr>
+        <tr><td>美容</td><td>¥5,510</td><td>¥15,000</td><td class="ok">37%</td></tr>
+        <tr><td>日用品</td><td>¥1,650</td><td>¥3,000</td><td class="ok">55%</td></tr>
+        <tr><td>交通</td><td>¥1,300</td><td>¥15,000</td><td class="ok">9%</td></tr>
+        <tr><td>特別支出 <span class="chip chip-special">初月のみ</span></td><td>¥117,927</td><td>—</td><td>—</td></tr>
+      </tbody>
+    </table>
+    <p class="note">※ 特別支出除く通常支出合計: ¥114,845</p>
   </div>
 
-  <!-- ========= ライフプラン ========= -->
-  <div class="tab-pane" id="tab-plan">
-    <div class="card">
-      <div class="card-title">フェーズ別 月次余り（横浜版 / MINI返却シナリオ）</div>
-      <div class="chart-wrap">
-        <canvas id="chartPhase"></canvas>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">フェーズサマリー</div>
-      <table>
-        <thead><tr><th>フェーズ</th><th>期間</th><th class="right">月次余り</th></tr></thead>
-        <tbody>
-          <tr><td>DINKS前半（車ローンあり）</td><td>2026/5–2027/6</td><td class="right blue">+7.3万</td></tr>
-          <tr><td>DINKS後半（車返却後）</td><td>2027/7–2028</td><td class="right green">+16.5万</td></tr>
-          <tr><td>1人目乳児期</td><td>2028–2029</td><td class="right">+4.2万</td></tr>
-          <tr><td>2人目乳児期 <span class="chip chip-red">要注意</span></td><td>2030–2031</td><td class="right red">▲1.0万</td></tr>
-          <tr><td>共働き復帰</td><td>2032–2039</td><td class="right">+3.4万</td></tr>
-          <tr><td>中高期</td><td>2040–2045</td><td class="right">+2.4万</td></tr>
-          <tr><td>大学期（教育費積立終了）</td><td>2046–2051</td><td class="right green">+29.4万</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="card">
-      <div class="card-title">2027年6月 MINI どうする？</div>
-      <table>
-        <thead><tr><th></th><th class="right">返却 ✅</th><th class="right">保有（150万精算）</th></tr></thead>
-        <tbody>
-          <tr><td>DINKS期の貯蓄</td><td class="right green">267万</td><td class="right red">92万</td></tr>
-          <tr><td>2人目乳児期の赤字</td><td class="right green">24万</td><td class="right red">84万</td></tr>
-          <tr><td>中高期の月余り</td><td class="right green">+2.4万</td><td class="right red">▲0.1万</td></tr>
-          <tr><td>家計の持続性</td><td class="right green">◎ 回る</td><td class="right red">⚠️ 複数フェーズ赤字</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="card">
-      <div class="card-title">マイルストーン</div>
-      <div class="milestone-row">
-        <div class="milestone-dot milestone-done"></div>
-        <span class="milestone-date">2026-05-17</span>
-        <span class="milestone-text">同棲開始（都筑ふれあいの丘）</span>
-      </div>
-      <div class="milestone-row">
-        <div class="milestone-dot"></div>
-        <span class="milestone-date">2026-10-01</span>
-        <span class="milestone-text">入籍予定</span>
-      </div>
-      <div class="milestone-row">
-        <div class="milestone-dot"></div>
-        <span class="milestone-date">2027-06</span>
-        <span class="milestone-text">MINIローン完了 → 残価精算判断</span>
-      </div>
-      <div class="milestone-row">
-        <div class="milestone-dot"></div>
-        <span class="milestone-date">2027-11ごろ</span>
-        <span class="milestone-text">生活予備費 266万 達成見込み</span>
-      </div>
-      <div class="milestone-row">
-        <div class="milestone-dot"></div>
-        <span class="milestone-date">2028ごろ</span>
-        <span class="milestone-text">1人目誕生（予定）</span>
-      </div>
-      <div class="milestone-row">
-        <div class="milestone-dot"></div>
-        <span class="milestone-date">2032-10</span>
-        <span class="milestone-text">奨学金完済（39歳）→ NISA増額へ</span>
-      </div>
-    </div>
+  <div class="card">
+    <h2>月次収支見込み（定常月・参考）</h2>
+    <div class="stat"><span class="stat-label">こーじ給与（保守）</span><span class="stat-value positive">+¥450,000</span></div>
+    <div class="stat"><span class="stat-label">明日花SBI送金（給与 − 家賃 − 定期 − 小遣い）</span><span class="stat-value neutral">変動</span></div>
+    <div class="stat"><span class="stat-label">月次支出目標（車ローンあり期間）</span><span class="stat-value negative">−¥533,400</span></div>
+    <p class="note">※ 明日花送金 = 明日花給与 − 家賃¥122,330 − 定期分割¥18,500（6〜11月）− 小遣い¥20,000</p>
   </div>
 
 </div>
-
-<script>
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-  });
-});
-
-Chart.defaults.font.family = "-apple-system, BlinkMacSystemFont, 'Hiragino Sans', sans-serif";
-Chart.defaults.font.size = 11;
-Chart.defaults.color = '#6e6e73';
-
-// 総資産ミックス
-new Chart(document.getElementById('chartAssetMix'), {
-  type: 'doughnut',
-  data: {
-    labels: ['投資信託', '生前贈与SBI', '楽天銀行', '米国株', 'SBI共通'],
-    datasets: [{
-      data: [6297832, 1000000, 407983, 14886, 86465],
-      backgroundColor: ['#34c759', '#5856d6', '#007aff', '#32ade6', '#c7c7cc'],
-      borderWidth: 0,
-      hoverOffset: 6,
-    }]
-  },
-  options: {
-    responsive: false,
-    cutout: '68%',
-    plugins: {
-      legend: { display: false },
-      tooltip: { callbacks: { label: ctx => ' ¥' + ctx.raw.toLocaleString() } }
-    }
-  }
-});
-
-const TARGETS = [40000, 20000, 11880, 10000, 15000, 3000, 15000];
-const ACTUALS = [34666, 21653, 11880, 14740, 5510, 1650, 1300];
-
-new Chart(document.getElementById('chartCategory'), {
-  type: 'bar',
-  data: {
-    labels: ['食費・自炊', '食費・外食', '住居・駐車場', '被服', '美容', '日用品', '交通'],
-    datasets: [
-      {
-        label: '実績',
-        data: ACTUALS,
-        backgroundColor: ACTUALS.map((v, i) => v > TARGETS[i] ? '#ff3b3099' : '#34c75999'),
-        borderColor: ACTUALS.map((v, i) => v > TARGETS[i] ? '#ff3b30' : '#34c759'),
-        borderWidth: 1.5,
-        borderRadius: 5,
-      },
-      {
-        label: '目標',
-        data: TARGETS,
-        backgroundColor: '#e5e5ea88',
-        borderColor: '#c7c7cc',
-        borderWidth: 1,
-        borderRadius: 5,
-      }
-    ]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    indexAxis: 'y',
-    plugins: {
-      legend: { position: 'bottom', labels: { boxWidth: 10 } },
-      tooltip: { callbacks: { label: ctx => ' ¥' + ctx.raw.toLocaleString() } }
-    },
-    scales: {
-      x: { ticks: { callback: v => '¥' + (v / 1000).toFixed(0) + 'k' }, grid: { color: '#f2f2f7' } },
-      y: { grid: { display: false } }
-    }
-  }
-});
-
-new Chart(document.getElementById('chartPortfolio'), {
-  type: 'doughnut',
-  data: {
-    labels: ['オルカン（NISA積立）', 'S&P500（旧NISA）', 'オルカン（NISA成長）', 'その他投信', 'SPYD', '楽天銀行'],
-    datasets: [{
-      data: [3326795, 1486135, 1258270, 226631, 14886, 407983],
-      backgroundColor: ['#007aff', '#34c759', '#5856d6', '#ff9f0a', '#ff453a', '#c7c7cc'],
-      borderWidth: 0,
-      hoverOffset: 8,
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } },
-      tooltip: { callbacks: { label: ctx => ' ¥' + ctx.raw.toLocaleString() } }
-    }
-  }
-});
-
-new Chart(document.getElementById('chartFixed'), {
-  type: 'doughnut',
-  data: {
-    labels: ['家賃+管理費', '車ローン', '食費（自炊）', 'NISA', '食費（外食）', '車保険', '駐車場', 'サブスク', '奨学金', 'その他'],
-    datasets: [{
-      data: [122330, 67400, 40000, 50000, 20000, 12500, 11880, 20000, 14000, 175290],
-      backgroundColor: ['#007aff','#ff9f0a','#34c759','#5856d6','#32ade6','#ff453a','#ff6b35','#c7c7cc','#8e8e93','#e5e5ea'],
-      borderWidth: 0,
-      hoverOffset: 8,
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } },
-      tooltip: { callbacks: { label: ctx => ' ¥' + ctx.raw.toLocaleString() } }
-    }
-  }
-});
-
-new Chart(document.getElementById('chartPhase'), {
-  type: 'bar',
-  data: {
-    labels: ['DINKS前半\n2026-27', 'DINKS後半\n2027-28', '1人目乳児\n2028-29', '2人目乳児\n2030-31', '共働き復帰\n2032-39', '中高期\n2040-45', '大学期\n2046-51'],
-    datasets: [{
-      label: '月次余り（万円）',
-      data: [7.3, 16.5, 4.2, -1.0, 3.4, 2.4, 29.4],
-      backgroundColor: [7.3, 16.5, 4.2, -1.0, 3.4, 2.4, 29.4].map(v => v >= 0 ? '#007aff' : '#ff3b30'),
-      borderRadius: 6,
-    }]
-  },
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: { display: false },
-      tooltip: { callbacks: { label: ctx => (ctx.raw >= 0 ? '+' : '') + ctx.raw + '万円' } }
-    },
-    scales: {
-      x: { grid: { display: false }, ticks: { font: { size: 10 }, maxRotation: 0 } },
-      y: { grid: { color: '#f2f2f7' }, ticks: { callback: v => v + '万' } }
-    }
-  }
-});
-</script>
 </body>
 </html>
