@@ -1,452 +1,310 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<meta name="robots" content="noindex">
-<title>山田家 家計ダッシュボード</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-:root {
-  --bg: #f4f5f7;
-  --surface: #ffffff;
-  --border: rgba(0,0,0,0.06);
-  --border-strong: rgba(0,0,0,0.10);
-  --text-1: #111827;
-  --text-2: #4b5563;
-  --text-3: #9ca3af;
-  --accent: #6366f1;
-  --accent-soft: #eef2ff;
-  --green: #059669;
-  --green-soft: #ecfdf5;
-  --green-bar: #34d399;
-  --amber: #d97706;
-  --amber-soft: #fffbeb;
-  --amber-bar: #fbbf24;
-  --red: #dc2626;
-  --red-soft: #fef2f2;
-  --red-bar: #f87171;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --shadow: 0 1px 2px rgba(0,0,0,0.05);
-  --shadow-md: 0 2px 8px rgba(0,0,0,0.08);
-  --font: 'Inter','Noto Sans JP',system-ui,sans-serif;
-  --tab-h: 56px;
-}
-*{box-sizing:border-box;margin:0;padding:0}
-html{-webkit-text-size-adjust:100%}
-body{font-family:var(--font);background:var(--bg);color:var(--text-1);font-size:14px;line-height:1.5;padding-bottom:calc(var(--tab-h) + 16px);overflow-x:hidden}
-.container{max-width:430px;margin:0 auto;padding:16px 16px 0}
-
-/* Header */
-.header{padding:8px 0 16px;text-align:center}
-.header h1{font-size:15px;font-weight:600;color:var(--text-2);letter-spacing:.02em}
-.header .date{font-size:12px;color:var(--text-3);margin-top:2px}
-
-/* Cards */
-.card{background:var(--surface);border-radius:var(--radius);padding:16px;margin-bottom:12px;border:.5px solid var(--border);box-shadow:var(--shadow)}
-.card-title{font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
-
-/* Progress */
-.progress-hero{text-align:center;padding:20px 16px}
-.progress-hero .pct{font-size:40px;font-weight:700;color:var(--accent);line-height:1}
-.progress-hero .label{font-size:12px;color:var(--text-3);margin-top:4px}
-.progress-track{background:#e5e7eb;border-radius:99px;height:10px;overflow:hidden;margin:16px 0 8px}
-.progress-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,var(--accent),#818cf8);transition:width .8s ease}
-.progress-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--text-3)}
-
-/* KPI row */
-.kpi-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px}
-.kpi{background:var(--surface);border-radius:var(--radius-sm);padding:12px 10px;border:.5px solid var(--border);text-align:center}
-.kpi .value{font-size:16px;font-weight:700;line-height:1.2}
-.kpi .label{font-size:10px;color:var(--text-3);margin-top:3px;line-height:1.2}
-.kpi.positive .value{color:var(--green)}
-.kpi.accent .value{color:var(--accent)}
-
-/* Category bars */
-.cat-item{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:.5px solid var(--border)}
-.cat-item:last-child{border-bottom:none}
-.cat-name{width:72px;font-size:11px;font-weight:500;color:var(--text-2);flex-shrink:0}
-.cat-bar-wrap{flex:1;position:relative;height:20px;background:#f3f4f6;border-radius:4px;overflow:hidden}
-.cat-bar{height:100%;border-radius:4px;transition:width .6s ease}
-.cat-bar.green{background:var(--green-bar)}
-.cat-bar.amber{background:var(--amber-bar)}
-.cat-bar.red{background:var(--red-bar)}
-.cat-values{width:100px;text-align:right;font-size:11px;flex-shrink:0}
-.cat-values .actual{font-weight:600}
-.cat-values .diff{font-size:10px}
-.cat-values .diff.over{color:var(--red)}
-.cat-values .diff.under{color:var(--green)}
-
-/* Monthly summary */
-.summary-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:.5px solid var(--border);font-size:13px}
-.summary-row:last-child{border-bottom:none}
-.summary-row.total{font-weight:600;border-top:1px solid var(--border-strong);margin-top:4px;padding-top:10px}
-.summary-row .val.income{color:var(--green)}
-.summary-row .val.expense{color:var(--red)}
-
-/* Chart */
-.chart-wrap{position:relative;height:240px;margin:8px -4px 0}
-
-/* Asset tab */
-.pw-gate{text-align:center;padding:40px 20px}
-.pw-gate p{font-size:13px;color:var(--text-2);margin-bottom:16px}
-.pw-input{display:flex;gap:8px;justify-content:center}
-.pw-input input{width:160px;padding:10px 14px;border:1.5px solid var(--border-strong);border-radius:var(--radius-sm);font-size:15px;font-family:var(--font);text-align:center;outline:none;transition:border-color .2s}
-.pw-input input:focus{border-color:var(--accent)}
-.pw-input button{padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:600;font-family:var(--font);cursor:pointer}
-.pw-error{color:var(--red);font-size:12px;margin-top:8px;display:none}
-
-.asset-total{text-align:center;padding:16px 0}
-.asset-total .amount{font-size:28px;font-weight:700;color:var(--text-1)}
-.asset-total .sub{font-size:12px;color:var(--text-3);margin-top:2px}
-
-.asset-section{margin-top:12px}
-.asset-section h3{font-size:12px;font-weight:600;color:var(--text-3);margin-bottom:8px;padding:0 2px}
-.asset-card{background:var(--surface);border-radius:var(--radius-sm);padding:12px;border:.5px solid var(--border);margin-bottom:8px}
-.asset-card .name{font-size:13px;font-weight:600}
-.asset-card .total-row{display:flex;justify-content:space-between;align-items:baseline;margin-top:4px}
-.asset-card .total-val{font-size:20px;font-weight:700}
-.asset-card .gain{font-size:12px;color:var(--green);font-weight:500}
-
-.fund-list{margin-top:10px;border-top:.5px solid var(--border);padding-top:8px}
-.fund-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:11px}
-.fund-row .fname{color:var(--text-2);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-right:8px}
-.fund-row .famount{font-weight:600;white-space:nowrap}
-.fund-row .fgain{color:var(--green);font-size:10px;width:52px;text-align:right;flex-shrink:0}
-
-/* Tabs */
-.tab-bar{position:fixed;bottom:0;left:0;right:0;height:var(--tab-h);background:var(--surface);border-top:.5px solid var(--border-strong);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom)}
-.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:none;border:none;font-family:var(--font);font-size:10px;color:var(--text-3);cursor:pointer;padding:4px 0;transition:color .2s}
-.tab-btn.active{color:var(--accent)}
-.tab-btn svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-.tab-content{display:none}
-.tab-content.active{display:block}
-
-/* Forecast tag */
-.forecast-tag{display:inline-block;font-size:10px;font-weight:600;padding:2px 8px;border-radius:99px;margin-left:4px}
-.forecast-tag.on-track{background:var(--green-soft);color:var(--green)}
-.forecast-tag.behind{background:var(--red-soft);color:var(--red)}
-
-/* Special expense badge */
-.special-badge{display:inline-block;font-size:9px;background:var(--amber-soft);color:var(--amber);padding:1px 6px;border-radius:4px;font-weight:600;margin-left:4px}
-
-/* Note */
-.note{font-size:11px;color:var(--text-3);padding:8px 0;line-height:1.5}
-
-/* Responsive: if wider than phone */
-@media(min-width:480px){
-  .container{padding:24px}
-  .kpi .value{font-size:18px}
-  .progress-hero .pct{font-size:48px}
-}
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <title>山田家 家計ダッシュボード</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#f5f5f7;color:#1d1d1f;padding:20px}
+    .container{max-width:800px;margin:0 auto}
+    h1{font-size:1.5rem;font-weight:700;margin-bottom:6px}
+    .updated{font-size:.85rem;color:#6e6e73;margin-bottom:24px}
+    .section-title{font-size:1.05rem;font-weight:700;margin:28px 0 12px;color:#1d1d1f;border-left:4px solid #007aff;padding-left:10px}
+    .card{background:#fff;border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,.08)}
+    .card h2{font-size:.88rem;font-weight:600;color:#6e6e73;margin-bottom:14px;text-transform:uppercase;letter-spacing:.05em}
+    .progress-bar{background:#e5e5ea;border-radius:8px;height:14px;overflow:hidden;margin:10px 0}
+    .progress-fill{background:linear-gradient(90deg,#34c759,#30d158);height:100%;border-radius:8px;transition:width .6s}
+    .progress-labels{display:flex;justify-content:space-between;font-size:.8rem;color:#6e6e73}
+    .stat{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f2f2f7}
+    .stat:last-child{border-bottom:none}
+    .stat-label{font-size:.9rem;color:#3a3a3c}
+    .stat-value{font-weight:600;font-size:.95rem}
+    .negative{color:#ff3b30}
+    .positive{color:#34c759}
+    .neutral{color:#1d1d1f}
+    .warning{background:#fff8e1;border-left:4px solid #ff9f0a;padding:12px 14px;border-radius:8px;font-size:.85rem;margin-top:12px;line-height:1.6}
+    .note{font-size:.78rem;color:#6e6e73;margin-top:10px;line-height:1.6}
+    table{width:100%;border-collapse:collapse;font-size:.85rem}
+    th{text-align:left;font-weight:600;color:#6e6e73;padding:4px 0 8px;border-bottom:2px solid #e5e5ea}
+    td{padding:7px 0;border-bottom:1px solid #f2f2f7;vertical-align:middle}
+    .tr{text-align:right}
+    .over{color:#ff3b30;font-weight:600}
+    .ok{color:#34c759;font-weight:600}
+    .chip{display:inline-block;padding:2px 8px;border-radius:99px;font-size:.75rem;font-weight:600}
+    .chip-gray{background:#f2f2f7;color:#6e6e73}
+    .chip-blue{background:#e3f0ff;color:#0055cc}
+    .two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media(max-width:520px){.two-col{grid-template-columns:1fr}}
+    .phase-box{background:#f9f9fb;border-radius:12px;padding:14px}
+    .phase-label{font-size:.75rem;font-weight:700;color:#6e6e73;margin-bottom:6px;text-transform:uppercase}
+    .phase-income{font-size:1.1rem;font-weight:700;color:#34c759}
+    .phase-detail{font-size:.82rem;color:#6e6e73;margin-top:4px;line-height:1.5}
+    .phase-surplus{font-size:.88rem;font-weight:700;color:#007aff;margin-top:6px}
+    .chart-wrap{position:relative;height:260px;margin-top:10px}
+    .tl{padding-left:22px;position:relative}
+    .tl::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:2px;background:#e5e5ea}
+    .tl-item{position:relative;margin-bottom:18px}
+    .tl-dot{position:absolute;left:-22px;top:5px;width:12px;height:12px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 2px currentColor}
+    .tl-dot.blue{color:#007aff;background:#007aff}
+    .tl-dot.orange{color:#ff9f0a;background:#ff9f0a}
+    .tl-dot.red{color:#ff3b30;background:#ff3b30}
+    .tl-dot.green{color:#34c759;background:#34c759}
+    .tl-year{font-size:.75rem;font-weight:700;color:#6e6e73;margin-bottom:2px}
+    .tl-text{font-size:.9rem;line-height:1.5}
+    .tl-amount{color:#ff3b30;font-weight:700}
+    .hl{background:#f0f7ff}
+    .star{color:#ff9f0a}
+    .asset-table td:nth-child(n+3){text-align:right}
+    .asset-table th:nth-child(n+3){text-align:right}
+    .univ-table td:nth-child(n+3){text-align:right}
+    .univ-table th:nth-child(n+3){text-align:right}
+  </style>
 </head>
 <body>
-
 <div class="container">
-  <div class="header">
-    <h1>山田家 家計ダッシュボード</h1>
-    <div class="date">2026年6月 更新</div>
+
+  <h1>山田家 家計ダッシュボード</h1>
+  <p class="updated">最終更新: 2026-06-27</p>
+
+  <!-- ===== 生活予備費 ===== -->
+  <div class="card">
+    <h2>生活予備費 目標 ¥2,660,000</h2>
+    <div class="progress-bar"><div class="progress-fill" style="width:0%"></div></div>
+    <div class="progress-labels"><span>—（0%）</span><span>¥2,660,000</span></div>
+    <div style="margin-top:14px">
+      <div class="stat"><span class="stat-label">SBI残高</span><span class="stat-value neutral">—</span></div>
+      <div class="stat"><span class="stat-label">SMBC未引落</span><span class="stat-value negative">—</span></div>
+      <div class="stat"><span class="stat-label">実質手元</span><span class="stat-value positive">—</span></div>
+      <div class="stat"><span class="stat-label">達成見込み</span><span class="stat-value neutral">2027年4月（約10ヶ月）</span></div>
+    </div>
+    
   </div>
 
-  <!-- Tab 1: 概要 -->
-  <div class="tab-content active" id="tab-overview">
-    <div class="card progress-hero">
-      <div class="card-title">生活予備費 266万 目標</div>
-      <div class="pct">31.6<span style="font-size:20px">%</span></div>
-      <div class="label">¥839,531 / ¥2,660,000</div>
-      <div class="progress-track"><div class="progress-fill" style="width:31.6%"></div></div>
-      <div class="progress-labels">
-        <span>¥0</span>
-        <span>達成予想 2027年3月</span>
-        <span>¥266万</span>
+  <!-- ===== 世帯月次収支 ===== -->
+  <div class="card">
+    <h2>世帯月次収支（定常月）</h2>
+    <div class="stat"><span class="stat-label">こーじ給与（手取り）</span><span class="stat-value positive">+¥480,000</span></div>
+    <div class="stat"><span class="stat-label">明日花給与（手取り）</span><span class="stat-value positive">+¥250,000</span></div>
+    <div class="stat"><span class="stat-label">世帯月収合計</span><span class="stat-value positive">¥730,000</span></div>
+    <div class="stat"><span class="stat-label">月次支出目標</span><span class="stat-value negative">−¥577,900</span></div>
+    <div class="stat"><span class="stat-label">月次余剰</span><span class="stat-value neutral">+¥152,100</span></div>
+    <p class="note">うちNISA¥50,000・家賃¥122,330・明日花小遣い¥25,000は各口座払い。SBI月次純増はフェーズで変動（¥196,500〜¥293,400）</p>
+  </div>
+
+  <div class="section-title">ライフプラン</div>
+
+  <!-- ===== フェーズ別収支 ===== -->
+  <div class="card">
+    <h2>フェーズ別 世帯収支</h2>
+    <div class="two-col">
+      <div class="phase-box">
+        <div class="phase-label">Phase 1　2026/6〜9月</div>
+        <div class="phase-income">月収 ¥553,170</div>
+        <div class="phase-detail">定期分割・医療・フルート個人払い控除あり</div>
+        <div class="phase-surplus">SBI純増 ¥196,500/月</div>
+      </div>
+      <div class="phase-box">
+        <div class="phase-label">Phase 2　2026/10〜11月</div>
+        <div class="phase-income">月収 ¥564,170</div>
+        <div class="phase-detail">家族カード発行・医療フルートが世帯カードへ</div>
+        <div class="phase-surplus">SBI純増 ¥207,500/月</div>
+      </div>
+      <div class="phase-box">
+        <div class="phase-label">Phase 3　2026/12〜2027/6</div>
+        <div class="phase-income">月収 ¥582,670</div>
+        <div class="phase-detail">収入ピーク（車ローンあり期間）</div>
+        <div class="phase-surplus">SBI純増 ¥226,000/月</div>
+      </div>
+      <div class="phase-box">
+        <div class="phase-label">Phase 4　2027/7〜</div>
+        <div class="phase-income">月収 ¥582,670</div>
+        <div class="phase-detail">車ローン¥67,400消滅 → 支出¥510,500</div>
+        <div class="phase-surplus">SBI純増 ¥293,400/月</div>
       </div>
     </div>
+    <p class="note" style="margin-top:14px">支出変化：2027/7 車ローン消滅（−¥67,400）　2032/10 奨学金終了（−¥14,000）</p>
+  </div>
 
-    <div class="kpi-row">
-      <div class="kpi">
-        <div class="value">¥839,531</div>
-        <div class="label">SBI残高</div>
+  <!-- ===== 特別支出 ===== -->
+  <div class="card">
+    <h2>特別支出タイムライン（〜2027年）</h2>
+    <div class="tl">
+      <div class="tl-item">
+        <div class="tl-dot orange"></div>
+        <div class="tl-year">2026年内</div>
+        <div class="tl-text">結婚指輪　<span class="tl-amount">−¥700,000</span></div>
       </div>
-      <div class="kpi positive">
-        <div class="value">+¥211,655</div>
-        <div class="label">前月比</div>
+      <div class="tl-item">
+        <div class="tl-dot orange"></div>
+        <div class="tl-year">2026年内</div>
+        <div class="tl-text">大型家電　<span class="tl-amount">−¥300,000</span></div>
       </div>
-      <div class="kpi accent">
-        <div class="value">約9ヶ月</div>
-        <div class="label">達成まで</div>
+      <div class="tl-item">
+        <div class="tl-dot orange"></div>
+        <div class="tl-year">2026〜2027（未確定）</div>
+        <div class="tl-text">挙式・フォトウェディング・新婚旅行　<span class="tl-amount">−¥2,000,000</span> <span class="chip chip-gray">投信折半</span></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot red"></div>
+        <div class="tl-year">2027年6月（確定）</div>
+        <div class="tl-text">車残価精算　<span class="tl-amount">−¥1,500,000</span> <span class="chip chip-gray">こーじ投信から</span></div>
       </div>
     </div>
-
-    <div class="card">
-      <div class="card-title">6月 予実ステータス</div>
-      <div class="summary-row">
-        <span>SBI予測</span>
-        <span class="val">¥824,376</span>
-      </div>
-      <div class="summary-row">
-        <span>SBI実績</span>
-        <span class="val" style="font-weight:600">¥839,531</span>
-      </div>
-      <div class="summary-row total">
-        <span>差分</span>
-        <span class="val income">+¥15,155（予測上振れ）</span>
-      </div>
-      <div class="note">特別支出（父の日¥25,000）込みでも予測を上回り。家計運営は順調。</div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">6月 収支サマリー</div>
-      <div class="summary-row">
-        <span>こーじ給与</span>
-        <span class="val income">+¥480,075</span>
-      </div>
-      <div class="summary-row">
-        <span>明日花送金</span>
-        <span class="val income">+¥82,062</span>
-      </div>
-      <div class="summary-row">
-        <span>家計費支出</span>
-        <span class="val expense">-¥364,325</span>
-      </div>
-      <div class="summary-row total">
-        <span>SBI月次純増</span>
-        <span class="val income">+¥211,655</span>
-      </div>
+    <div class="stat" style="margin-top:14px">
+      <span class="stat-label">合計特別支出</span>
+      <span class="stat-value negative">−¥4,500,000</span>
     </div>
   </div>
 
-  <!-- Tab 2: 予実 -->
-  <div class="tab-content" id="tab-budget">
-    <div class="card">
-      <div class="card-title">カテゴリ別 予算 vs 実績（6月）<span class="forecast-tag on-track">順調</span></div>
-      <div id="cat-list"></div>
-      <div class="note" style="margin-top:12px">
-        ※ 住居・駐車場の超過は初期費用（一時的）。食費（自炊）は5月現金繰越分が乗っている。定常カテゴリは概ね目標内。
+  <!-- ===== 育休シミュレーション ===== -->
+  <div class="card">
+    <h2>育休シミュレーション</h2>
+    <div class="tl">
+      <div class="tl-item">
+        <div class="tl-dot green"></div>
+        <div class="tl-year">〜2028年</div>
+        <div class="tl-text">通常期　月収 <strong>¥730,000</strong></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot orange"></div>
+        <div class="tl-year">2028年〜（9ヶ月）</div>
+        <div class="tl-text">1人目誕生・二人同時育休　月収 <strong class="tl-amount">≈¥584,000</strong>　大学積立+¥36,000/月 開始</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot blue"></div>
+        <div class="tl-year">こーじ復職後（残15ヶ月）</div>
+        <div class="tl-text">こーじ復職・明日花育休継続　月収 <strong>≈¥680,000</strong></div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot orange"></div>
+        <div class="tl-year">2030年〜（9ヶ月）</div>
+        <div class="tl-text">2人目誕生・二人同時育休　月収 <strong class="tl-amount">≈¥584,000</strong>　大学積立×2（+¥72,000/月）</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot green"></div>
+        <div class="tl-year">2032年〜</div>
+        <div class="tl-text">通常復帰・奨学金終了（10月）　月収 <strong>¥730,000</strong>　安定期</div>
       </div>
     </div>
+    <p class="note">育休給付金≈手取り8割（非課税）。こーじ≈¥384,000・明日花≈¥200,000。大学積立は月¥36,000×各人・18年・年利5%で各¥1,247万に。</p>
   </div>
 
-  <!-- Tab 3: 推移 -->
-  <div class="tab-content" id="tab-trend">
-    <div class="card">
-      <div class="card-title">SBI残高 推移 vs 予測ライン</div>
-      <div class="chart-wrap"><canvas id="chart-balance"></canvas></div>
+  <!-- ===== 資産推移グラフ ===== -->
+  <div class="card">
+    <h2>資産推移シミュレーション（30年・年利5%・給与現状維持）</h2>
+    <div class="chart-wrap">
+      <canvas id="assetChart"></canvas>
     </div>
-    <div class="card">
-      <div class="card-title">月次 収入 vs 支出</div>
-      <div class="chart-wrap"><canvas id="chart-income-expense"></canvas></div>
-    </div>
+    <p class="note">個人資産（楽天証券NISA）・大学積立①②・SBI生活予備費¥266万の積み上げ。2046・2048年に大学費用充当で一時減少。</p>
   </div>
 
-  <!-- Tab 4: 資産 -->
-  <div class="tab-content" id="tab-assets">
-    <div class="card" id="asset-gate">
-      <div class="pw-gate">
-        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--text-3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:12px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        <p>資産情報はパスワードで保護されています</p>
-        <div class="pw-input">
-          <input type="password" id="pw-field" placeholder="パスワード" autocomplete="off">
-          <button onclick="unlockAssets()">解除</button>
-        </div>
-        <div class="pw-error" id="pw-error">パスワードが違います</div>
-      </div>
-    </div>
-    <div id="asset-content" style="display:none"></div>
+  <!-- ===== 資産推移詳細表 ===== -->
+  <div class="card">
+    <h2>資産推移 詳細（単位：万円）</h2>
+    <table class="asset-table">
+      <thead>
+        <tr>
+          <th>年末</th><th>年齢</th>
+          <th>個人<br>楽天証券</th>
+          <th>大学積立①<br>1人目</th>
+          <th>大学積立②<br>2人目</th>
+          <th>SBI<br>¥266万</th>
+          <th><strong>総計</strong></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>2026</td><td>33</td><td>683</td><td>—</td><td>—</td><td>35</td><td><strong>718</strong></td></tr>
+        <tr><td>2027</td><td>34</td><td>825</td><td>—</td><td>—</td><td>266</td><td><strong>1,091</strong></td></tr>
+        <tr><td>2028</td><td>35</td><td>908</td><td>44</td><td>—</td><td>266</td><td><strong>1,218</strong></td></tr>
+        <tr><td>2030</td><td>37</td><td>1,131</td><td>140</td><td>44</td><td>266</td><td><strong>1,581</strong></td></tr>
+        <tr><td>2032</td><td>39</td><td>1,379</td><td>245</td><td>140</td><td>266</td><td><strong>2,030</strong></td></tr>
+        <tr><td>2036</td><td>43</td><td>2,090</td><td>489</td><td>361</td><td>266</td><td><strong>3,206</strong></td></tr>
+        <tr><td>2041</td><td>48</td><td>3,198</td><td>868</td><td>705</td><td>266</td><td><strong>5,037</strong></td></tr>
+        <tr class="hl"><td><span class="star">★</span>2045</td><td>52</td><td>4,301</td><td><strong>1,247</strong></td><td>1,048</td><td>266</td><td><strong>6,862</strong></td></tr>
+        <tr class="hl"><td><span class="star">★</span>2046</td><td>53</td><td>4,612</td><td>→充当</td><td>1,145</td><td>266</td><td><strong>6,023</strong></td></tr>
+        <tr class="hl"><td><span class="star">★</span>2047</td><td>54</td><td>4,786</td><td>—</td><td><strong>1,247</strong></td><td>266</td><td><strong>6,299</strong></td></tr>
+        <tr class="hl"><td><span class="star">★</span>2048</td><td>55</td><td>5,665</td><td>—</td><td>→充当</td><td>266</td><td><strong>5,931</strong></td></tr>
+        <tr><td>2051</td><td>58</td><td>7,450</td><td>—</td><td>—</td><td>266</td><td><strong>7,716</strong></td></tr>
+        <tr><td>2056</td><td>63</td><td>11,073</td><td>—</td><td>—</td><td>266</td><td><strong>11,339</strong></td></tr>
+      </tbody>
+    </table>
+    <p class="note">★ = 大学費用充当年。1人目2045末¥1,247万→2046年充当。2人目2047末¥1,247万→2048年充当。</p>
   </div>
+
+  <!-- ===== 大学積立年次推移 ===== -->
+  <div class="card">
+    <h2>大学積立 年次推移（月¥36,000・年利5%）</h2>
+    <table class="univ-table">
+      <thead>
+        <tr><th>年</th><th>①/②年目</th><th>1人目</th><th>2人目</th><th>合計</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>2028</td><td>1 / —</td><td>44万</td><td>—</td><td>44万</td></tr>
+        <tr><td>2029</td><td>2 / —</td><td>91万</td><td>—</td><td>91万</td></tr>
+        <tr><td>2030</td><td>3 / 1</td><td>140万</td><td>44万</td><td>184万</td></tr>
+        <tr><td>2031</td><td>4 / 2</td><td>191万</td><td>91万</td><td>282万</td></tr>
+        <tr><td>2032</td><td>5 / 3</td><td>245万</td><td>140万</td><td>385万</td></tr>
+        <tr><td>2033</td><td>6 / 4</td><td>301万</td><td>191万</td><td>492万</td></tr>
+        <tr><td>2034</td><td>7 / 5</td><td>361万</td><td>245万</td><td>606万</td></tr>
+        <tr><td>2035</td><td>8 / 6</td><td>423万</td><td>301万</td><td>724万</td></tr>
+        <tr><td>2036</td><td>9 / 7</td><td>489万</td><td>361万</td><td>850万</td></tr>
+        <tr><td>2037</td><td>10 / 8</td><td>557万</td><td>423万</td><td>980万</td></tr>
+        <tr><td>2038</td><td>11 / 9</td><td>630万</td><td>489万</td><td>1,119万</td></tr>
+        <tr><td>2039</td><td>12 / 10</td><td>705万</td><td>557万</td><td>1,262万</td></tr>
+        <tr><td>2040</td><td>13 / 11</td><td>785万</td><td>630万</td><td>1,415万</td></tr>
+        <tr><td>2041</td><td>14 / 12</td><td>868万</td><td>705万</td><td>1,573万</td></tr>
+        <tr><td>2042</td><td>15 / 13</td><td>956万</td><td>785万</td><td>1,741万</td></tr>
+        <tr><td>2043</td><td>16 / 14</td><td>1,048万</td><td>868万</td><td>1,916万</td></tr>
+        <tr><td>2044</td><td>17 / 15</td><td>1,145万</td><td>956万</td><td>2,101万</td></tr>
+        <tr class="hl"><td><strong>2045</strong></td><td><strong>18 / 16</strong></td><td><strong>1,247万</strong></td><td>1,048万</td><td><strong>2,295万</strong></td></tr>
+        <tr class="hl"><td><strong>2046</strong></td><td>→充当 / 17</td><td><strong>→0</strong></td><td>1,145万</td><td>1,145万</td></tr>
+        <tr class="hl"><td><strong>2047</strong></td><td>— / <strong>18</strong></td><td>—</td><td><strong>1,247万</strong></td><td><strong>1,247万</strong></td></tr>
+        <tr class="hl"><td><strong>2048</strong></td><td>— / →充当</td><td>—</td><td><strong>→0</strong></td><td>0万</td></tr>
+      </tbody>
+    </table>
+  </div>
+
 </div>
 
-<!-- Bottom Tab Bar -->
-<nav class="tab-bar">
-  <button class="tab-btn active" onclick="switchTab('overview',this)">
-    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-    <span>概要</span>
-  </button>
-  <button class="tab-btn" onclick="switchTab('budget',this)">
-    <svg viewBox="0 0 24 24"><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z"/></svg>
-    <span>予実</span>
-  </button>
-  <button class="tab-btn" onclick="switchTab('trend',this)">
-    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-    <span>推移</span>
-  </button>
-  <button class="tab-btn" onclick="switchTab('assets',this)">
-    <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-    <span>資産</span>
-  </button>
-</nav>
-
 <script>
-// Tab switching
-function switchTab(id, btn) {
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('tab-' + id).classList.add('active');
-  btn.classList.add('active');
-  if (id === 'trend' && !window._chartsInit) initCharts();
-}
+const ctx = document.getElementById('assetChart').getContext('2d');
+const labels = ['2026','2027','2028','2030','2032','2036','2041','2045','2046','2047','2048','2051','2056'];
+const dP  = [683,825,908,1131,1379,2090,3198,4301,4612,4786,5665,7450,11073];
+const dU1 = [0,0,44,140,245,489,868,1247,0,0,0,0,0];
+const dU2 = [0,0,0,44,140,361,705,1048,1145,1247,0,0,0];
+const dS  = [35,266,266,266,266,266,266,266,266,266,266,266,266];
 
-// Format currency
-function fmt(n) {
-  return '¥' + Math.abs(n).toLocaleString('ja-JP');
-}
-
-// Category data (June)
-const categories = [
-  {name:'住居・駐車場',actual:51969,budget:11880,note:'初期費用'},
-  {name:'食費（自炊）',actual:58290,budget:40000,note:'5月繰越含む'},
-  {name:'被服',actual:18249,budget:10000},
-  {name:'帰省',actual:25000,budget:20000},
-  {name:'食費（外食）',actual:22258,budget:20000},
-  {name:'日用品',actual:11162,budget:10000},
-  {name:'車・保険',actual:12508,budget:12500},
-  {name:'通信',actual:748,budget:500},
-  {name:'サブスク',actual:19974,budget:20000},
-  {name:'美容',actual:10510,budget:15000},
-  {name:'光熱費',actual:3000,budget:5000},
-  {name:'交通',actual:4704,budget:10000},
-];
-
-function renderCategories() {
-  const el = document.getElementById('cat-list');
-  const sorted = [...categories].sort((a,b) => (b.actual/b.budget) - (a.actual/a.budget));
-  el.innerHTML = sorted.map(c => {
-    const pct = c.actual / c.budget * 100;
-    const diff = c.actual - c.budget;
-    const color = pct > 120 ? 'red' : pct > 100 ? 'amber' : 'green';
-    const barW = Math.min(pct, 150);
-    const diffStr = diff > 0 ? '+' + fmt(diff) : '-' + fmt(Math.abs(diff));
-    const diffCls = diff > 0 ? 'over' : 'under';
-    const badge = c.note ? '<span class="special-badge">' + c.note + '</span>' : '';
-    return '<div class="cat-item">' +
-      '<div class="cat-name">' + c.name + badge + '</div>' +
-      '<div class="cat-bar-wrap"><div class="cat-bar ' + color + '" style="width:' + barW + '%"></div></div>' +
-      '<div class="cat-values"><div class="actual">' + fmt(c.actual) + '</div>' +
-      '<div class="diff ' + diffCls + '">' + diffStr + ' (' + Math.round(pct) + '%)</div></div>' +
-      '</div>';
-  }).join('');
-}
-renderCategories();
-
-// Charts
-window._chartsInit = false;
-function initCharts() {
-  window._chartsInit = true;
-  const months = ['5月','6月','7月','8月','9月','10月','11月','12月','1月','2月','3月','4月'];
-  const forecast = [627876,824376,1020876,1217376,1413876,1621376,1828876,2036376,2243876,2451376,2658876,2866376];
-  const actual = [627876,839531,null,null,null,null,null,null,null,null,null,null];
-
-  new Chart(document.getElementById('chart-balance'), {
-    type: 'line',
-    data: {
-      labels: months,
-      datasets: [
-        {label:'実績',data:actual,borderColor:'#6366f1',backgroundColor:'rgba(99,102,241,.1)',borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#6366f1',fill:false,spanGaps:false},
-        {label:'予測',data:forecast,borderColor:'#d1d5db',backgroundColor:'rgba(209,213,219,.15)',borderWidth:1.5,borderDash:[6,4],pointRadius:0,fill:true},
-        {label:'266万ライン',data:Array(12).fill(2660000),borderColor:'#f87171',borderWidth:1,borderDash:[3,3],pointRadius:0,fill:false}
-      ]
-    },
-    options: {
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:12,font:{size:10,family:'Inter'},padding:12}}},
-      scales:{
-        y:{beginAtZero:true,ticks:{callback:v=>'¥'+(v/10000).toFixed(0)+'万',font:{size:10}},grid:{color:'rgba(0,0,0,.04)'}},
-        x:{ticks:{font:{size:10}},grid:{display:false}}
+new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [
+      { label: 'SBI生活予備費', data: dS,  backgroundColor: '#c7c7cc', stack: 'a' },
+      { label: '大学積立② 2人目', data: dU2, backgroundColor: '#a2d4ab', stack: 'a' },
+      { label: '大学積立① 1人目', data: dU1, backgroundColor: '#34c759', stack: 'a' },
+      { label: '個人資産（楽天証券）', data: dP,  backgroundColor: '#007aff', stack: 'a' },
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 12 } },
+      tooltip: {
+        callbacks: {
+          label: c => ` ${c.dataset.label}: ¥${c.raw}万`
+        }
       }
-    }
-  });
-
-  new Chart(document.getElementById('chart-income-expense'), {
-    type: 'bar',
-    data: {
-      labels: ['5月','6月'],
-      datasets: [
-        {label:'収入',data:[695075,572205],backgroundColor:'#34d399',borderRadius:4},
-        {label:'支出',data:[335221,364325],backgroundColor:'#f87171',borderRadius:4}
-      ]
     },
-    options: {
-      responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{display:true,position:'bottom',labels:{boxWidth:12,font:{size:10,family:'Inter'},padding:12}}},
-      scales:{
-        y:{beginAtZero:true,ticks:{callback:v=>'¥'+(v/10000).toFixed(0)+'万',font:{size:10}},grid:{color:'rgba(0,0,0,.04)'}},
-        x:{ticks:{font:{size:10}},grid:{display:false}}
-      }
+    scales: {
+      x: { stacked: true, grid: { display: false } },
+      y: { stacked: true, ticks: { callback: v => '¥'+v+'万' } }
     }
-  });
-}
-
-// Asset decryption
-const ENCRYPTED_ASSETS = '/Azop9BMVOihvz7O/ThnE9kJbbkSncEXVr2jZKo1/36Z0HRYrzmtIsuSjfOZQ0pGea9NDuVlN9u+E1LoZZuWddWcNYgFOk47nFgB5e9l8ayHTpgKYkpjIfUhZvHkcypKwKu+t8tBn9uwke1HUxAhLD21bY1QidJaydl2Q+Pn4KB3sWXKS2QZZzRHqx30zBM9Z7Bn3fCGu+pVeVXispevJmA/roqs3jcFq3nQK8hCcPOtUcr7/HZnexAanY7JN7BpB8PbFe8S+057RVwFU7ftnANTwWXn84qOaEQVku0egT74qTsgEJ/v+Yc+TBiRy1DKXnj11XhIwuHhbBoSYUrtG2HvECDLBGYbWWXBdL8lnuQXH1GTthK2rIPsoVeTycWAVV5lxwp1LNCyQeDbkbgidRE0YZNrSx8BpMbZbhKb7LeKLbpngF82YcuR3HchohFK6ezkJ/CzXjov7o2aUB9rywMkEQCko/xMw/CpciL0vuY1kBYw5rMPueT2lu5qC0Yya8nnGc/2PWGW1HL8Z7G1Rg7s4m3VqwPDxkd06Fl087oxcYf/Vm3shOnPRE/PGCbXkRF2fwJT8+NhJO1d/jcP16a1kk+gWXkaMliFqE0ZSr5SyLN/Mp8eweBUBO0rA999C+mV6nvT2lFYUNVYJgEprkPpRpHr8hWtHBGwCSHraJPL5FKzwyg3p0gdAlMU83LAWxdekeUXo+eAvet2KiT+8ZBt82AujFHe4jSk0PzeCwyrNcyNebap+0cv24cBJFzmEsbgFSPqRdz7+8G+N+jlcJrv9sT4CWMScrnRLMqXi3Wfzh8jG9PsvZBG/t4g6xu7DaYIhI2wkFIJI5I1RB57d01OpdsDVotMPtITICBclhnxIpCZUve1dQAWBu+wazU20oMaJc4Jh8XrpH1PF5ZE4dhTXKPTyW1m9YTiFj2zMjmhG5ff2PhvshxlCi/RCju+dnn2hOy0wiLoxlRsk6SA6fZvs3rzy6s8hg2HQ4u67CaL1dqIHALl9bY2EsQn0InXsrb1jQRA4j4CodRZ6ckyO6QGMeK+6Lfjv2heMeUgMUHV0QXWUS/61AC29YROXNPMwniaYCRRGuDMRpXXYbzcJUaHj0CX2X4nRjXj4Q4Z9EKL5nwzdt40/6m7gyjzrbXT8jbq1yM8fLpFe8H24Ahps+RHBBm2P4EbjdlNYGc+si7YEzqOUrR4bJV+nyRLC9dluqjWebdKlgFziSki9SINvhla7h3vBaoabsdkCetRjgoobAjqk/Jsm8jW5f4x48LCBDhKssQGWFZVfwb8bppZS2VAbfKQ3mzdyk2Rbp9b3Jn/jFawPpWsvd1RZSxMF6gZlVsOUTC+CaScD84SwAX9nHVb8+ZbS7mI6o7DhE3ulbK47fiS/YEF4BKy5PlgvKY28D0WxMAhbM8RODRP7GPDCHlt4pON1bTVBob7ngGByp35g5SVdhWV206qPdzyrAZhWpkhKWLF1INCZIXFkCUMxYy57hcdjATuikcv9eCoaGKNhQTifCb/PI0jv3lbNp59Lf0JBK1g2bF8k7YVrHkr7anaHoW4g8RFoL+zHHsZMHaEeybHTprLhU4UYvhmm7t6IP4dmFZc0ZG2q3KkPyBbpfvxLQ3fF3r/1nJP74imHz9SMTw5oleOVwmVIE8QMU45DqgEV6idH9wXq9pY5B308ctvSus7L3LITCgCfMhCyw0qukibxZtm4wVk7hy87f178ltVtf2U6MfEKW2cLG+GbTULIeBzfmNIApga2HuuqcZrYnbR+PWrI6Ztr2hDfl2rhjyeiMlzTmRz/0+E+zQteK2mxkI/mIoIoU60a/MqrSX7JiW9zE7iCex/aHf2Cy98iAdRI/3sY9Ko1UEH/VyMSDIxqGoCJK0sE4kzXiN41EmgLvOd5myE3Mor0oWxCffv0vyNUbY1wcj2DEGOEC2+dZo1w6EzQId1OCBizO5rLG86t3dm7I8chM2OnWA5vWfPOO9xR/mFBhtimYe7H5Ux0+fX5Oz3EDH15m427Mt1WTfto4oAJq2COY9XtynFHVWRgUWF+Qc3Ha9KOfg3DFp2BgvIqU7CaKIQoEc/JcTrJlXZ0KC2i4jvf7OuqSdyRo5UzC5sZ7vS3uJHad5HCvdKLkW1XS9UL0s2HUMP+RPeZkP6na8vjSGkiMsqnL5cyElGNQEublFrg6og4iZ22qdGsvgaa5oJDjC1n8FZp+sMipcbZIH8h4vC/le42pKHQrQKOXj1/kP+u29RD32obv1kT2uLVlXqzFFVY/FLOfCq8s3zUGmEw5DF/16yXU+srOeYHUcp/upEQu4o29VdoJAMBVLFQXVZ7KbeWcz7OJBa+Oa9mXIx8nzo1Jwu2F8NpCij2vW0Kdh65bYyoo7XfTtFtkw=';
-
-async function unlockAssets() {
-  const pw = document.getElementById('pw-field').value;
-  try {
-    const raw = Uint8Array.from(atob(ENCRYPTED_ASSETS), c => c.charCodeAt(0));
-    const salt = raw.slice(0, 16);
-    const iv = raw.slice(16, 28);
-    const tag = raw.slice(28, 44);
-    const ct = raw.slice(44);
-    const ciphertext = new Uint8Array(ct.length + tag.length);
-    ciphertext.set(ct);
-    ciphertext.set(tag, ct.length);
-    const keyMaterial = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);
-    const key = await crypto.subtle.deriveKey({name:'PBKDF2',salt,iterations:100000,hash:'SHA-256'}, keyMaterial, {name:'AES-GCM',length:256}, false, ['decrypt']);
-    const decrypted = await crypto.subtle.decrypt({name:'AES-GCM',iv}, key, ciphertext);
-    const data = JSON.parse(new TextDecoder().decode(decrypted));
-    renderAssets(data);
-  } catch(e) {
-    document.getElementById('pw-error').style.display = 'block';
-    document.getElementById('pw-field').value = '';
-    setTimeout(() => document.getElementById('pw-error').style.display = 'none', 2000);
   }
-}
-
-document.getElementById('pw-field').addEventListener('keydown', e => {
-  if (e.key === 'Enter') unlockAssets();
 });
-
-function renderAssets(data) {
-  document.getElementById('asset-gate').style.display = 'none';
-  const el = document.getElementById('asset-content');
-  el.style.display = 'block';
-
-  let html = '<div class="card"><div class="asset-total">' +
-    '<div class="card-title">世帯総資産</div>' +
-    '<div class="amount">' + fmt(data.household) + '</div>' +
-    '<div class="sub">' + data.updated + ' 時点</div>' +
-    '</div></div>';
-
-  // こーじ
-  const k = data.koji;
-  html += '<div class="asset-section"><h3>' + k.label + '</h3><div class="asset-card">' +
-    '<div class="total-row"><div><div class="name">評価額合計</div></div>' +
-    '<div><div class="total-val">' + fmt(k.total) + '</div>' +
-    '<div class="gain">+' + fmt(k.gain) + ' (+' + k.gainPct.toFixed(1) + '%)</div></div></div>' +
-    '<div class="fund-list">' +
-    k.funds.map(f => '<div class="fund-row"><div class="fname">' + f.name + '</div>' +
-      '<div class="famount">' + fmt(f.amount) + '</div>' +
-      '<div class="fgain">+' + f.pct.toFixed(1) + '%</div></div>').join('') +
-    '</div></div></div>';
-
-  // 明日花
-  const a = data.asuka;
-  html += '<div class="asset-section"><h3>' + a.label + '</h3><div class="asset-card">' +
-    '<div class="total-row"><div class="name">評価額合計</div>' +
-    '<div class="total-val">' + fmt(a.total) + '</div></div>' +
-    '<div class="note">' + (a.note || '') + '</div></div></div>';
-
-  // SBI
-  const s = data.sbi;
-  html += '<div class="asset-section"><h3>' + s.label + '</h3><div class="asset-card">' +
-    '<div class="total-row"><div class="name">残高</div>' +
-    '<div class="total-val">' + fmt(s.total) + '</div></div></div></div>';
-
-  el.innerHTML = html;
-}
 </script>
 </body>
 </html>
